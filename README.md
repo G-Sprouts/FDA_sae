@@ -30,3 +30,11 @@ fd.class_dfs
 ```
 
 See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/Documentation.ipynb) for further explanation
+
+## Dataset creation
+
+Easily create your own dataset using FAERS data for machine learning applications and data visualization tasks! 
+
+
+
+See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/Documentation.ipynb) for further explanation
