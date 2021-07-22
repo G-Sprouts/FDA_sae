@@ -1,18 +1,20 @@
-# FDA_sae
+# fdata
 
 This tool is meant for the cleaning and creation of custom tables using FDA Adverse Event Reporting System (FAERS) data.
 
 Download whichever [quarterly files](https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html) (ASCII format) you wish to analyze, and utilize these functions to expedite cleaning and organization for your project!
 
-Installation
+
+## **Installation**
 
 Run the following to install:
 ```
 pip install fdata
 ```
-Note: if there are empty lists initialized before the definition, the final output of the function will be attached to these built-in lists. See example below.
+**Note**: If there are empty lists initialized before the definition, the final output of the function will be attached to these built-in lists. See example below.
 
-Usage
+
+## **Usage**
 ```
 import fdata as fd
 
