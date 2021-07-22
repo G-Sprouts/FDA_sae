@@ -29,4 +29,4 @@ fd.class_dfs
     (output)
 ```
 
-See function documentation for further explanation
+See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/Documentation.ipynb) for further explanation
