@@ -1,10 +1,10 @@
 import pandas as pd
+import csv
 
 class_dfs = []
 missing_dfs = []
-new_files = []
 positives = []
-inds = []
+indices = []
 
 final_dfs = []
 miss_dfs = []
@@ -23,35 +23,41 @@ outcomes_by_id = {}
 outcomes_by_id_list = []
 final_outs = []
 
-def sorter(drug_file):
+def sorter(drug_file_path):
+    
+    drug_file = pd.read_csv(drug_file_path, delimiter='$')
 
     drug_file.prod_ai = drug_file.prod_ai.astype(str)
     drug_file.prod_ai = drug_file.prod_ai.map(lambda x: x.replace('.', ''))
-
-    indicies = drug_file[drug_file.prod_ai != 'nan'].index
-    nan_indicies = drug_file[drug_file.prod_ai == 'nan'].index
-
-    present = drug_file.prod_ai.loc[indicies]
-    absent = drug_file.prod_ai.loc[nan_indicies]
     
-    class_df = pd.DataFrame(columns=['drugname', 'class_id', 'class', 'indication'])
-    missing_df = pd.DataFrame(columns=['drugname', 'generic'])
+    index = drug_file[drug_file.prod_ai != 'nan'].index
+    nan_index = drug_file[drug_file.prod_ai == 'nan'].index
     
-    class_df.drugname = present
+    present = drug_file.prod_ai.loc[index]
+    present_primaryids = drug_file.primaryid.loc[index]
     
-    missing_df.drugname = drug_file.drugname.loc[nan_indicies]
-    missing_df.generic = absent
-
+    absent = drug_file.prod_ai.loc[nan_index]
+    absent_primaryids = drug_file.primaryid.loc[nan_index]
+    
+    class_df = pd.DataFrame(columns=['primaryid', 'prod_ai', 'class_id', 'class', 'indication'])
+    missing_df = pd.DataFrame(columns=['primaryid', 'prod_ai', 'class_id', 'class', 'indication'])
+    
+    class_df.primaryid = present_primaryids
+    class_df.prod_ai = present
+    
+    missing_df = absent_primaryids
+    missing_df.prod_ai = absent
+    
     class_dfs.append([class_df])
     missing_dfs.append([missing_df])
-    new_files.append([drug_file])
     positives.append([present])
-    inds.append([indicies])
-    print('Check "class_dfs", "missing_dfs", "new_files", "positives", and "inds" for output')
+    indices.append([index])
+    
+    print('Check "class_dfs", "missing_dfs", "positives" and "indices" for output')
 
-def map_1(class_df,p,i):
+def map_1(class_df,prod_ai,indices):
 
-    for x,y in zip(p,i):
+    for x,y in zip(prod_ai,indices):
         if x.endswith('MAB') or x.startswith('GALCANEZUMAB-GNLM') or x.startswith('EMGALITY')or x.startswith('COSENTYX') or x.startswith('DUPIXENT') or x.endswith('DUPIXENT') or x.startswith('XOLAIR') or x.startswith('ACTEMRA') or x.startswith('STELARA'):
             class_df.loc[y, 'class_id'] = 1
             class_df.loc[y, 'class'] = 'monoclonal_antibody'
@@ -712,27 +718,27 @@ def map_3(class_df,drugs,idx, final_df):
 
 
 
-def reacs_map(f):
-    start_time = time.time()
+def reacs_map(reactions__file_path):
     
-    for x in glob.iglob('REAC20Q*.t*'):
-        with open(x) as csvfile:
-            reacreader = csv.reader(csvfile, delimiter='$')
-            next(reacreader) #skip headers 
-            for row in reacreader:
+    reactions_by_id = {}
+    with open(x) as csvfile:
+        reacreader = csv.reader(csvfile, delimiter='$')
+        next(reacreader) #skip headers
+         
+        for row in reacreader:
 
-                ptlist = reactions_by_id.get(row[0], [])
-                ptlist.append(row[2])
-                reactions_by_id[row[0]] = ptlist
+            ptlist = reactions_by_id.get(row[0], [])
+            ptlist.append(row[2])
+            reactions_by_id[row[0]] = ptlist
 
-            reactions_by_id_list.append(reactions_by_id)
-            reactions_by_id = {}
+        reactions_by_id_list.append(reactions_by_id) 
+        
             
-    reac_df = pd.DataFrame(f.keys(), columns=(['primaryid'])) 
+    reac_df = pd.DataFrame(reactions_by_id.keys(), columns=(['primaryid'])) 
     reac_df = reac_df.set_index('primaryid')
     reac_df['pt'] = 'nan'
     
-    for k,v in f.items():
+    for k,v in reactions_by_id.items():
         reac_df.loc[k, 'pt'] = ' , '.join(v)
     final_reacs.append(reac_df)
     
@@ -740,27 +746,25 @@ def reacs_map(f):
     
 
 
-def outs_map(f):
-    start_time = time.time()
+def outs_map(outcomes_file_path):
     
-    for x in glob.iglob('OUTC20Q*.t*'):
-        with open(x) as csvfile:
-            outcreader = csv.reader(csvfile, delimiter='$')
-            next(outcreader) #skip headers
-            for row in outcreader:
+    outcomes_by_id = {}
+    with open(x) as csvfile:
+        outcreader = csv.reader(csvfile, delimiter='$')
+        next(outcreader) #skip headers
+        
+        for row in outcreader:
+            ptlist = outcomes_by_id.get(row[0], [])
+            ptlist.append(row[2])
+            outcomes_by_id[row[0]] = ptlist
+        outcomes_by_id_list.append(outcomes_by_id)
+        
 
-                ptlist = outcomes_by_id.get(row[0], [])
-                ptlist.append(row[2])
-                outcomes_by_id[row[0]] = ptlist
-
-            outcomes_by_id_list.append(outcomes_by_id)
-            outcomes_by_id = {}
-    
-    out_df = pd.DataFrame(f.keys(), columns=(['primaryid']))
+    out_df = pd.DataFrame(outcomes_by_id.keys(), columns=(['primaryid']))
     out_df = out_df.set_index('primaryid')
     out_df['out_code'] = 'nan'
        
-    for k,v in f.items():
+    for k,v in outcomes_by_id.items():
         out_df.loc[k,'out_code'] = ' , '.join(v)
     final_outs.append(out_df)
     
@@ -776,20 +780,39 @@ def file_merge(saved_dfs, class_dfs_primaryids, final_reacs, final_outs):
         new = new.set_index('primaryid')
         new['pt'] = 'nan'
         new['out_code'] = 'nan'
-        
+        i = 0
         for x in fr.index:
-            x = int(x) 
-            for z in new.index:
+            for a in counter_list:
+                if a > 0:
+                    i = counter_list[-1]
+            x = int(x)
+            for z in new.index[i:-1]:
                 
-                if x == z:
+                if x == new.index[i]:
                     new.loc[z,'pt'] = fr.loc[str(x),'pt']
-                    
+                    i += 1
+                else:
+                    counter_list.append(i)
+                    break
+
+        print('finished with reactions')
+        
+        i = 0
         for y in fo.index:
+            
+            for a in counter_list_2:
+                if a > 0:
+                    i = counter_list_2[-1]
             y = int(y)
-            for z in new.index:
+            for z in new.index[i:-1]:
                 
-                if y == z:
+                if y == new.index[i]:
                     new.loc[z,'out_code'] = fo.loc[str(y),'out_code']
+                    i += 1
+                else:
+                    counter_list_2.append(i)
+                    break
+        print('finished with outcomes')
         new = new[['drugname','drugname_orig', 'class', 'class_id', 'indication', 'pt', 'out_code']].rename(columns={'drugname': 'prod_ai', 'drugname_orig': 'drugname'}).reset_index()
         print('completed')         
         custom_dfs.append(new)
