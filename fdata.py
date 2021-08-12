@@ -15,7 +15,12 @@ custom_dfs = []
 pt_list = []
 outs_code_list = []
 
+reactions_by_id = {}
+reactions_by_id_list = []
 final_reacs = []
+
+outcomes_by_id = {}
+outcomes_by_id_list = []
 final_outs = []
 
 def sorter(drug_file):
@@ -705,60 +710,87 @@ def map_3(class_df,drugs,idx, final_df):
     final_dfs.append(final_df)
     miss_dfs.append(miss_df)
 
-def reacs_map(f,ids):
+
+
+def reacs_map(f):
+    start_time = time.time()
     
-    reac_df = pd.DataFrame(ids, columns=(['primaryid']))
+    for x in glob.iglob('REAC20Q*.t*'):
+        with open(x) as csvfile:
+            reacreader = csv.reader(csvfile, delimiter='$')
+            next(reacreader) #skip headers 
+            for row in reacreader:
+
+                ptlist = reactions_by_id.get(row[0], [])
+                ptlist.append(row[2])
+                reactions_by_id[row[0]] = ptlist
+
+            reactions_by_id_list.append(reactions_by_id)
+            reactions_by_id = {}
+            
+    reac_df = pd.DataFrame(f.keys(), columns=(['primaryid'])) 
+    reac_df = reac_df.set_index('primaryid')
     reac_df['pt'] = 'nan'
-
-    for i,x in enumerate(f):
-        while True:
-            try:
-                reac_df.loc[i,'pt'] = x
-                break
-            except ValueError:
-                for y in x:
-                    reac_df.loc[i,'pt'] = ' , '.join(y)
-                    break
+    
+    for k,v in f.items():
+        reac_df.loc[k, 'pt'] = ' , '.join(v)
     final_reacs.append(reac_df)
-    print('Completed. Check "final_reacs" for output.')
-def outs_map(outs,ids):
     
-    out_df = pd.DataFrame(ids, columns=(['primaryid']))    
+    print('completed')
+    
+
+
+def outs_map(f):
+    start_time = time.time()
+    
+    for x in glob.iglob('OUTC20Q*.t*'):
+        with open(x) as csvfile:
+            outcreader = csv.reader(csvfile, delimiter='$')
+            next(outcreader) #skip headers
+            for row in outcreader:
+
+                ptlist = outcomes_by_id.get(row[0], [])
+                ptlist.append(row[2])
+                outcomes_by_id[row[0]] = ptlist
+
+            outcomes_by_id_list.append(outcomes_by_id)
+            outcomes_by_id = {}
+    
+    out_df = pd.DataFrame(f.keys(), columns=(['primaryid']))
+    out_df = out_df.set_index('primaryid')
     out_df['out_code'] = 'nan'
-    
-    for i,x in enumerate(outs):
-        while True:
-            try:
-                out_df.loc[i,'out_code'] = x
-                break
-            except ValueError:
-                for y in x:
-                    out_df.loc[i,'out_code'] = ' , '.join(y)
-                    break
+       
+    for k,v in f.items():
+        out_df.loc[k,'out_code'] = ' , '.join(v)
     final_outs.append(out_df)
-    print('Completed. Check "final_outs" for output.')
+    
+    print('done')
 
 
-def file_merge(saved_dfs, drug_files, df1, df2):
-
-    for f,df in zip(saved_dfs, drug_files):
-        indices = f.orig_idx
-        kept = df[['primaryid','caseid']].loc[indices]
-        additions.append(kept)
-    for f,a,rf,of in zip(saved_dfs, additions, df1, df2):
-        new = f.join([a.set_index(f.index)])
+def file_merge(saved_dfs, class_dfs_primaryids, final_reacs, final_outs):
+    
+    for sd,cd,fr,fo in zip(saved_dfs, class_dfs_primaryids, final_reacs, final_outs):
+        indices = sd.orig_idx
+        new_cd = cd[0].loc[indices]
+        new = sd.join(new_cd.set_index(sd.index),rsuffix='_orig')
+        new = new.set_index('primaryid')
         new['pt'] = 'nan'
-        new['outc_cod'] = 'nan'
-
-        i = 0
-        for i,x in enumerate(rf.primaryid):
-            for j,y in enumerate(new.primaryid):
-                if x == y:
-                    new.pt.loc[j] = rf.pt.loc[i]
-        for i,x in enumerate(of.primaryid):
-            for j,y in enumerate(new.primaryid):
-                if x == y:
-                    new.outc_cod.loc[j] = of.outc_cod.loc[i]
-
-    custom_dfs.append(new)
+        new['out_code'] = 'nan'
+        
+        for x in fr.index:
+            x = int(x) 
+            for z in new.index:
+                
+                if x == z:
+                    new.loc[z,'pt'] = fr.loc[str(x),'pt']
+                    
+        for y in fo.index:
+            y = int(y)
+            for z in new.index:
+                
+                if y == z:
+                    new.loc[z,'out_code'] = fo.loc[str(y),'out_code']
+        new = new[['drugname','drugname_orig', 'class', 'class_id', 'indication', 'pt', 'out_code']].rename(columns={'drugname': 'prod_ai', 'drugname_orig': 'drugname'}).reset_index()
+        print('completed')         
+        custom_dfs.append(new)
 
