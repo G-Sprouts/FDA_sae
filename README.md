@@ -35,6 +35,7 @@ See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/Do
 
 Easily create your own dataset using FAERS data for machine learning applications and data visualization tasks! 
 
+![image](https://user-images.githubusercontent.com/66538374/129272912-d6f5af3b-c50d-4c41-84ae-69104c14de6b.png)
 
 
 See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/Documentation.ipynb) for further explanation
