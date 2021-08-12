@@ -721,7 +721,7 @@ def map_3(class_df,drugs,idx, final_df):
 def reacs_map(reactions__file_path):
     
     reactions_by_id = {}
-    with open(x) as csvfile:
+    with open(reactions__file_path) as csvfile:
         reacreader = csv.reader(csvfile, delimiter='$')
         next(reacreader) #skip headers
          
@@ -749,7 +749,7 @@ def reacs_map(reactions__file_path):
 def outs_map(outcomes_file_path):
     
     outcomes_by_id = {}
-    with open(x) as csvfile:
+    with open(outcomes_file_path) as csvfile:
         outcreader = csv.reader(csvfile, delimiter='$')
         next(outcreader) #skip headers
         
