@@ -5,9 +5,12 @@ class_dfs = []
 missing_dfs = []
 positives = []
 indices = []
+grouped_list = []
 
 final_dfs = []
 miss_dfs = []
+final_storage_list = []
+final_missing_storage_list = []
 
 additions = []
 custom_dfs = []
@@ -23,8 +26,12 @@ outcomes_by_id = {}
 outcomes_by_id_list = []
 final_outs = []
 
-def sorter(drug_file_path):
+counter_list = []
+counter_list_2 = []
+
+def sorter(drug_file_path,top_indices=None):
     
+    grouped_list = []
     drug_file = pd.read_csv(drug_file_path, delimiter='$')
 
     drug_file.prod_ai = drug_file.prod_ai.astype(str)
@@ -48,6 +55,12 @@ def sorter(drug_file_path):
     missing_df = absent_primaryids
     missing_df.prod_ai = absent
     
+    if top_indices == None:
+        top_indices = -1
+    grouped_list = [class_df[class_df.loc[:,'prod_ai'] == x].index for x in class_df.prod_ai.value_counts()[:top_indices].index]
+    class_df = class_df.loc[itertools.chain.from_iterable(grouped_list)]
+    
+    
     class_dfs.append([class_df])
     missing_dfs.append([missing_df])
     positives.append([present])
@@ -55,30 +68,165 @@ def sorter(drug_file_path):
     
     print('Check "class_dfs", "missing_dfs", "positives" and "indices" for output')
 
-def map_1(class_df,prod_ai,indices):
-
-    for x,y in zip(prod_ai,indices):
-        if x.endswith('MAB') or x.startswith('GALCANEZUMAB-GNLM') or x.startswith('EMGALITY')or x.startswith('COSENTYX') or x.startswith('DUPIXENT') or x.endswith('DUPIXENT') or x.startswith('XOLAIR') or x.startswith('ACTEMRA') or x.startswith('STELARA'):
-            class_df.loc[y, 'class_id'] = 1
+def map_1(class_df, array_split):
+    start_time = time.time()
+    
+    for x,y in zip(class_df.prod_ai,class_df.index):
+        if x.endswith('COSMETICS'):
+            class_df.loc[y, 'class_id'] = 300
+            class_df.loc[y, 'class'] = 'cosmetic'
+            class_df.loc[y, 'indication'] = 'non-prescription use'
+        elif x.endswith('MAB') or x.startswith('GALCANEZUMAB-GNLM') or x.startswith('EMGALITY')or x.startswith('COSENTYX') or x.startswith('DUPIXENT') or x.endswith('DUPIXENT') or x.startswith('XOLAIR') or x.startswith('ACTEMRA') or x.startswith('STELARA'):
+            class_df.loc[y, 'class_id'] = 301
             class_df.loc[y, 'class'] = 'monoclonal_antibody'
             class_df.loc[y, 'indication'] = 'autoimmune diseases'
-        elif x.endswith('PRIL'):
-            class_df.loc[y, 'class_id'] = 2
-            class_df.loc[y, 'class'] = 'ACE_inhibitor'
-            class_df.loc[y, 'indication'] = 'hypertenstion' 
-        elif x.endswith('TIDINE') or x.endswith('ZANTAC') or x.startswith('KETOTIFEN FUMARATE') or x.endswith('ZYRTEC') or x.startswith('CETERIZINE') or x.endswith('ZINE') or x.endswith('DINE') or x.endswith('MINE') or x.startswith('DIPHENHYDRAMINE') or x.startswith('BENADRYL') or x.startswith('LORATADINE') or x.startswith('CLARITIN'):
-            class_df.loc[y, 'class_id'] = 3
-            class_df.loc[y, 'class'] = 'antihistamine'
-            class_df.loc[y, 'indication'] = 'allergy'
+        
+        elif x.startswith('ADAPALENE'):
+            class_df.loc[y, 'class_id'] = 302
+            class_df.loc[y, 'class'] = 'retinoid'
+            class_df.loc[y, 'indication'] = 'acne vulgaris'
+        elif x.startswith('PREDNIS*') or x.endswith('*LONE') or x.endswith('*SONE') or x.startswith('MOMETASONE FUROATE') or x.startswith('FLUTICASONE PROPIONATE') or x.startswith('FLONASE'):
+            class_df.loc[y, 'class_id'] = 38
+            class_df.loc[y, 'class'] = 'corticosteroid'
+            class_df.loc[y, 'indication'] = 'immunosupressant'
+        elif x.startswith('ACETAMINOPHEN') or x.startswith('TYLENOL'):
+            class_df.loc[y, 'class_id'] = 52
+            class_df.loc[y, 'class'] = 'analgesic'
+            class_df.loc[y, 'indication'] = 'fever reducer'
+        elif x.startswith('ASPIRIN') or x.startswith('IBUPROFEN') or x.startswith('MELOXICAM') or x.startswith('MOBIC') or x.endswith('FENAC') or x.endswith('PROFEN') or x.startswith('CELECOXIB') or x.startswith('CELEBREX') or x.startswith('NAPROXEN') or x.startswith('NAPROSYN'):
+            class_df.loc[y, 'class_id'] = 55
+            class_df.loc[y, 'class'] = 'nonsteroidal anti-inflammatory drug'
+            class_df.loc[y, 'indication'] = 'fever reducer, inflammation, pain management'
         elif x.endswith('STATIN', 0, 12) or x.endswith('STATIN'):
             class_df.loc[y, 'class_id'] = 4
             class_df.loc[y, 'class'] = 'HMG-CoA reductase inhibitor'
             class_df.loc[y, 'indication'] = 'hyperlipidemia'
+        elif x.endswith('IDE'):
+            if x.endswith('HYDROCHLORIDE'):
+                pass
+            else:
+                class_df.loc[y, 'class_id'] = 20
+                class_df.loc[y, 'class'] = 'loop diuretics'
+                class_df.loc[y, 'indication'] = 'hypertension'
+        elif x.startswith('METHOTREXATE') or x.startswith('CYTARABINE') or x.startswith('FLUDARABINE PHOSPHATE') or x.startswith('FLUDARA'):
+            class_df.loc[y, 'class_id'] = 39
+            class_df.loc[y, 'class'] = 'antimetabolites'
+            class_df.loc[y, 'indication'] = 'cancer treatment'
+        elif x.startswith('AVONEX') or x.startswith('INTERFERON BETA-1A'):
+            class_df.loc[y, 'class_id'] = 44
+            class_df.loc[y, 'class'] = 'interferon'
+            class_df.loc[y, 'indication'] = 'multiple sclerosis'
+        elif x.startswith('GABAPENTIN') or x.startswith('LYRICA') or x.startswith('PREGABALIN') or x.startswith('BACLOFEN'):
+            class_df.loc[y, 'class_id'] = 45
+            class_df.loc[y, 'class'] = 'GABA analogue'
+            class_df.loc[y, 'indication'] = 'anticonvulsant, fibromyalgia, nerve pain'
+        elif x.startswith('METFORMIN'):
+            class_df.loc[y, 'class_id'] = 62
+            class_df.loc[y, 'class'] = 'biguanides'
+            class_df.loc[y, 'indication'] = 'diabetic management'
+        elif x.startswith('AMLODIPINE'):
+            class_df.loc[y, 'class_id'] = 46
+            class_df.loc[y, 'class'] = 'calcium channel blocker'
+            class_df.loc[y, 'indication'] = 'hypertension, chest pain'
+        elif x.startswith('INFLECTRA') or x.startswith('INFLIXIMAB-DYYB') or x.startswith('HUMIRA') or x.startswith('REMICADE') or x.endswith('INFLIXIMAB') or x.startswith('CERTOLIZUMAB PEGOL') or x.startswith('CIMZIA'):
+            class_df.loc[y, 'class_id'] = 41
+            class_df.loc[y, 'class'] = 'TNF blocking agent'
+            class_df.loc[y, 'indication'] = 'autoimmune diseases'
+        elif x.startswith('XARELTO') or x.startswith('WARFARIN') or x.startswith('RIVAROXABAN'):
+            class_df.loc[y, 'class_id'] = 40
+            class_df.loc[y, 'class'] = 'anticoagulant' 
+            class_df.loc[y, 'indication'] = 'blood clots'
+        elif x.startswith('ENBREL') or x.startswith('ETANERCEPT'):
+            class_df.loc[y, 'class_id'] = 42
+            class_df.loc[y, 'class'] = 'TNF inhibitor'
+            class_df.loc[y, 'indication'] = 'autoimmune diseases'
+        elif x.startswith('ELIQUIS') or x.startswith('APIXABAN'):
+            class_df.loc[y, 'class_id'] = 68
+            class_df.loc[y, 'class'] = 'factor Xa inhibitor anticoagulant'
+            class_df.loc[y, 'indication'] = 'nonvalvular atrial fibrilation'
+        elif x.startswith('OTEZLA') or x.startswith('APREMILAST') or x.startswith('SILDENAFIL CITRATE'):
+            class_df.loc[y, 'class_id'] = 54
+            class_df.loc[y, 'class'] = 'phosphodiesterase inhibitor'
+            class_df.loc[y, 'indication'] = 'autoimmune diseases, erectile dysfunction'
+        elif x.startswith('PROAIR HFA') or x.startswith('ALBUTEROL SULFATE'):
+            class_df.loc[y, 'class_id'] = 79
+            class_df.loc[y, 'class'] = 'beta-2 adrenergic agonist'
+            class_df.loc[y, 'indication'] = 'asthma'    
+        elif x.startswith('SYNTHROID') or x.startswith('LEVOTHYROXINE') or x.startswith('TESTOSTERONE') or x.startswith('ESTROGENS, CONJUGATED') or x.startswith('ETONOGESTREL') or x.startswith('NEXPLANON') or x.startswith('IMPLANON') or x.startswith('MELATONIN') or x.startswith('ESTRADIOL') or x.startswith('ESTRACE') or x.endswith('TROPIN') or x.startswith('LEVONORGESTREL') or x.startswith('TESTOSTERONE CYPIONATE') or x.startswith('DEPO-TESTOSTERONE'):
+            class_df.loc[y, 'class_id'] = 70
+            class_df.loc[y, 'class'] = 'hormone'
+            class_df.loc[y, 'indication'] = 'hormone deficiency'    
+        elif x.endswith('PRIL'):
+            class_df.loc[y, 'class_id'] = 2
+            class_df.loc[y, 'class'] = 'ACE_inhibitor'
+            class_df.loc[y, 'indication'] = 'hypertenstion'    
+        elif x.startswith('ORENCIA') or x.startswith('ABATACEPT') or x.startswith('GLATIRAMER ACETATE') or x.startswith('REVLIMID') or x.startswith('LENALIDOMIDE'):
+            class_df.loc[y, 'class_id'] = 50
+            class_df.loc[y, 'class'] = 'immunomodulator'
+            class_df.loc[y, 'indication'] = 'autoimmune diseases'   
+        elif x.startswith('PACLITAXEL') or x.startswith('TAXOL') or x.startswith('VINCRISTINE SULFATE') or x.startswith('DOCETAXEL') or x.startswith('TAXOTERE'):
+            class_df.loc[y, 'class_id'] = 99
+            class_df.loc[y, 'class'] = 'antimicrotubule agent'
+            class_df.loc[y, 'indication'] = 'cancer treatment'   
+        elif x.startswith('PROGRAF') or x.startswith('TACROLIMUS'):
+            class_df.loc[y, 'class_id'] = 81
+            class_df.loc[y, 'class'] = 'immunosuppressant'
+            class_df.loc[y, 'indication'] = 'prophylaxis of organ rejection'
+        elif x.startswith('SINEMET') or x.startswith('CARBIDOPA\LEVODOPA') or x.startswith('LEVODOPA'):
+            class_df.loc[y, 'class_id'] = 84
+            class_df.loc[y, 'class'] = 'decarboxylase inhibitor, CNS agent'
+            class_df.loc[y, 'indication'] = 'parkinsons disease'    
+        elif x.startswith('LANTUS') or x.startswith('INSULIN GLARGINE') or x.startswith('INSULIN NOS') or x.startswith('INSULIN ASPART') or x.startswith('NOVOLOG')or x.startswith('INSULIN HUMAN') or x.startswith('MYXREDLIN') or x.startswith('HUMALOG') or x.startswith('INSULIN LISPRO'): 
+            class_df.loc[y, 'class_id'] = 82
+            class_df.loc[y, 'class'] = 'human insulin analog'
+            class_df.loc[y, 'indication'] = 'glycemic management, T1 diabetes, T2 diabetes'    
         elif x.endswith('AZEPAM') or x.endswith('ZOLAM'):
             class_df.loc[y, 'class_id'] = 5
             class_df.loc[y, 'class'] = 'benzodiazepine'
-            class_df.loc[y, 'indication'] = 'anxiety'
-        elif x.endswith('AFIL'): 
+            class_df.loc[y, 'indication'] = 'anxiety'            
+        elif x.endswith('IUM') or x.endswith('URONIUM'):
+            class_df.loc[y, 'class_id'] = 23
+            class_df.loc[y, 'class'] = 'nondepolarizing paralytics'
+            class_df.loc[y, 'indication'] = 'anesthesia'          
+        elif x.startswith('XELJANZ') or x.startswith('TOFACITINIB') or x.startswith('IMATINIB MESYLATE') or x.startswith('EVEROLIMUS') or x.endswith('LIB') or x.endswith('NIB') or x.endswith('TINIB') or x.startswith('ANIB') or x.endswith('RAFENIB') or x.startswith('IBRANCE') or x.startswith('PALBOCICLIB'):
+            class_df.loc[y, 'class_id'] = 47
+            class_df.loc[y, 'class'] = 'tyrosine kinase inhibitor'
+            class_df.loc[y, 'indication'] = 'autoimmune diseases, cancer treatment'
+        
+        elif x.startswith('VITAMIN') or x.startswith('BIOTIN') or x.startswith('UBIDECARENONE') or x.startswith('MINERALS\VITAMINS') or x.startswith('FERROUS SULFATE') or x.startswith('FISH OIL') or x.startswith('IRON') or x.startswith('ERGOCALCIFEROL') or x.startswith('CHOLECALCIFEROL') or x.startswith('CYANOCOBALAMIN') or x.startswith('ASCORBIC ACID') or x.startswith('FOLIC'):
+            class_df.loc[y, 'class_id'] = 74
+            class_df.loc[y, 'class'] = 'vitamin, mineral, antioxidant'
+            class_df.loc[y, 'indication'] = 'dietary supplement'    
+        elif x.startswith('CLOZARIL') or x.startswith('CLOZAPINE') or x.startswith('HALOPERIDOL') or x.startswith('PALIPERIDONE PALMITATE') or x.startswith('INVEGA SUSTENNA') or x.startswith('RISPERIDONE') or x.startswith('RISPERDAL') or x.startswith('PIMAVANSERIN TARTRATE') or x.startswith('NUPLAZID') or x.startswith('QUETIAPINE') or x.startswith('OLANZAPINE') or x.startswith('ZYPREXA'):
+            class_df.loc[y, 'class_id'] = 98
+            class_df.loc[y, 'class'] = 'antipsychotic'
+            class_df.loc[y, 'indication'] = 'schizophrenia'         
+        else:
+            pass
+        
+
+            
+    class_df.class_id = class_df.class_id.astype(str)
+    lead_df = class_df[class_df.class_id != 'nan']
+    df_2 = class_df[class_df.class_id == 'nan']
+    
+    idx = df_2.index
+    drugs = df_2.prod_ai
+
+    end_time = time.time()
+    total_min = (end_time - start_time) / 60
+    total_hr = total_min / 60
+    print(total_min)
+    print('first stage complete, check "lead_df" for current output. Initiating stage two...')
+   
+    return map_2(df_2,drugs,idx,lead_df,array_split)  
+
+def map_2(class_df,drugs,idx,lead_df,array_split):
+    start_time = time.time()
+    
+    for x,y in zip(drugs,idx):
+        
+        if x.endswith('AFIL'): 
             class_df.loc[y, 'class_id'] = 6
             class_df.loc[y, 'class'] = 'phosphodiesterase inhibitor'
             class_df.loc[y, 'indication'] = 'erectile dysfunction, hypertension'
@@ -93,11 +241,11 @@ def map_1(class_df,prod_ai,indices):
         elif x.endswith('AZINE'):
             class_df.loc[y, 'class_id'] = 9
             class_df.loc[y, 'class'] = 'phenothiazines'
-            class_df.loc[y, 'indication'] = 'antipsychotic'
-        elif x.endswith('AZOLE'):
-            class_df.loc[y, 'class_id'] = 10
-            class_df.loc[y, 'class'] = 'azole-antifungal'
-            class_df.loc[y, 'indication'] = 'antifungal'
+            class_df.loc[y, 'indication'] = 'antipsychotic'    
+        elif x.endswith('TIDINE') or x.endswith('ZANTAC') or x.startswith('KETOTIFEN FUMARATE') or x.endswith('ZYRTEC') or x.startswith('CETERIZINE') or x.endswith('ZINE') or x.endswith('DINE') or x.endswith('MINE') or x.startswith('DIPHENHYDRAMINE') or x.startswith('BENADRYL') or x.startswith('LORATADINE') or x.startswith('CLARITIN'):
+            class_df.loc[y, 'class_id'] = 3
+            class_df.loc[y, 'class'] = 'antihistamine'
+            class_df.loc[y, 'indication'] = 'allergy'
         elif x.endswith('BARBITAL'):
             class_df.loc[y, 'class_id'] = 11
             class_df.loc[y, 'class'] = 'barbituates'
@@ -134,13 +282,6 @@ def map_1(class_df,prod_ai,indices):
             class_df.loc[y, 'class_id'] = 19
             class_df.loc[y, 'class'] = 'granulocyte colony stimulating factors'
             class_df.loc[y, 'indication'] = 'blood dyscrasias'
-        elif x.endswith('IDE'):
-            if x.endswith('HYDROCHLORIDE'):
-                pass
-            else:
-                class_df.loc[y, 'class_id'] = 20
-                class_df.loc[y, 'class'] = 'loop diuretics'
-                class_df.loc[y, 'indication'] = 'hypertension'
         elif x.endswith('IPINE') or x.startswith('DILTIAZEM'):
             class_df.loc[y, 'class_id'] = 21
             class_df.loc[y, 'class'] = 'dihydropyridine calcium channel blockers'
@@ -148,11 +289,7 @@ def map_1(class_df,prod_ai,indices):
         elif x.endswith('IPRAMINE'):
             class_df.loc[y, 'class_id'] = 22
             class_df.loc[y, 'class'] = 'tricyclic antidepressants'
-            class_df.loc[y, 'indication'] = 'depression'
-        elif x.endswith('IUM') or x.endswith('URONIUM'):
-            class_df.loc[y, 'class_id'] = 23
-            class_df.loc[y, 'class'] = 'nondepolarizing paralytics'
-            class_df.loc[y, 'indication'] = 'anesthesia'
+            class_df.loc[y, 'indication'] = 'depression'  
         elif x.endswith('LUKAST'):
             class_df.loc[y, 'class_id'] = 24
             class_df.loc[y, 'class'] = 'LTD receptor antagonist'
@@ -161,7 +298,7 @@ def map_1(class_df,prod_ai,indices):
             class_df.loc[y, 'class_id'] = 25
             class_df.loc[y, 'class'] = 'protease inhibitor'
             class_df.loc[y, 'indication'] = 'antiviral'
-        elif x.endswith('OLOL') or x.startswith('CARVEDILOL') or x.startswith('COREG') or x.startswith('TIMOLOL MALEATE') or x.startswith('METOPROLOL') or x.startswith('BISOPROLOL FUMARATE') or x.startswith('ZEBETA'):
+        elif x.endswith('*LOL') or x.startswith('COREG') or x.startswith('TIMOLOL MALEATE') or x.startswith('BISOPROLOL FUMARATE') or x.startswith('ZEBETA'):
             class_df.loc[y, 'class_id'] = 26
             class_df.loc[y, 'class'] = 'beta blocker'
             class_df.loc[y, 'indication'] = 'hypertension'
@@ -204,75 +341,43 @@ def map_1(class_df,prod_ai,indices):
         elif x.endswith('ZOSIN'):
             class_df.loc[y, 'class_id'] = 37
             class_df.loc[y, 'class'] = 'alpha-1 antagonist'
-            class_df.loc[y, 'indication'] = 'hypertension, BPH'
-        elif x.startswith('PREDNISONE') or x.startswith('PREDNISOLONE') or x.startswith('DESOXIMETASONE') or x.startswith('FLUTICASONE') or x.startswith('MOMETASONE FUROATE') or x.startswith('HYDROCORTISONE') or x.startswith('FLUTICASONE PROPIONATE') or x.startswith('FLONASE'):
-            class_df.loc[y, 'class_id'] = 38
-            class_df.loc[y, 'class'] = 'corticosteroid'
-            class_df.loc[y, 'indication'] = 'immunosupressant'
-        elif x.startswith('METHOTREXATE') or x.startswith('CYTARABINE') or x.startswith('FLUDARABINE PHOSPHATE') or x.startswith('FLUDARA'):
-            class_df.loc[y, 'class_id'] = 39
-            class_df.loc[y, 'class'] = 'antimetabolites'
-            class_df.loc[y, 'indication'] = 'cancer treatment'
-        elif x.startswith('XARELTO') or x.startswith('WARFARIN') or x.startswith('RIVAROXABAN'):
-            class_df.loc[y, 'class_id'] = 40
-            class_df.loc[y, 'class'] = 'anticoagulant' 
-            class_df.loc[y, 'indication'] = 'blood clots'
-        elif x.startswith('INFLECTRA') or x.startswith('INFLIXIMAB-DYYB') or x.startswith('HUMIRA') or x.startswith('REMICADE') or x.endswith('INFLIXIMAB') or x.startswith('CERTOLIZUMAB PEGOL') or x.startswith('CIMZIA'):
-            class_df.loc[y, 'class_id'] = 41
-            class_df.loc[y, 'class'] = 'TNF blocking agent'
-            class_df.loc[y, 'indication'] = 'autoimmune diseases'
-        elif x.startswith('ENBREL') or x.startswith('ETANERCEPT'):
-            class_df.loc[y, 'class_id'] = 42
-            class_df.loc[y, 'class'] = 'TNF inhibitor'
-            class_df.loc[y, 'indication'] = 'autoimmune diseases'
-        elif x.startswith('DEXAMETHASONE') or x.startswith('METHYLPREDNISOLONE') or x.endswith('METHYLPREDNISOLONE'):
-            class_df.loc[y, 'class_id'] = 43
-            class_df.loc[y, 'class'] = 'glucocorticoid'
-            class_df.loc[y, 'indication'] = 'immunosupressant'
-        elif x.startswith('AVONEX') or x.startswith('INTERFERON BETA-1A'):
-            class_df.loc[y, 'class_id'] = 44
-            class_df.loc[y, 'class'] = 'interferon'
-            class_df.loc[y, 'indication'] = 'multiple sclerosis'
-        elif x.startswith('GABAPENTIN') or x.startswith('LYRICA') or x.startswith('PREGABALIN') or x.startswith('BACLOFEN'):
-            class_df.loc[y, 'class_id'] = 45
-            class_df.loc[y, 'class'] = 'GABA analogue'
-            class_df.loc[y, 'indication'] = 'anticonvulsant, fibromyalgia, nerve pain'
-        elif x.startswith('AMLODIPINE'):
-            class_df.loc[y, 'class_id'] = 46
-            class_df.loc[y, 'class'] = 'calcium channel blocker'
-            class_df.loc[y, 'indication'] = 'hypertension, chest pain'
-        elif x.startswith('XELJANZ') or x.startswith('TOFACITINIB CITRATE') or x.startswith('IMATINIB MESYLATE') or x.startswith('EVEROLIMUS') or x.endswith('LIB') or x.endswith('NIB') or x.endswith('TINIB') or x.startswith('ANIB') or x.endswith('RAFENIB') or x.startswith('IBRANCE') or x.startswith('PALBOCICLIB'):
-            class_df.loc[y, 'class_id'] = 47
-            class_df.loc[y, 'class'] = 'tyrosine kinase inhibitor'
-            class_df.loc[y, 'indication'] = 'autoimmune diseases, cancer treatment'
-        elif x.startswith('ORENCIA') or x.startswith('ABATACEPT') or x.startswith('GLATIRAMER ACETATE') or x.startswith('REVLIMID') or x.startswith('LENALIDOMIDE'):
-            class_df.loc[y, 'class_id'] = 50
-            class_df.loc[y, 'class'] = 'immunomodulator'
-            class_df.loc[y, 'indication'] = 'autoimmune diseases'
-        elif x.startswith('TRUVADA') or x.startswith('DESCOVY') or x.startswith('BICTEGRAVIR SODIUM\EMTRICITABINE\TENOFOVIR ALAFENAMIDE FUMARATE') or x.startswith('EMTRICITABINE\TENOFOVIR DISOPROXIL FUMARATE') or x.startswith('VIREAD') or x.startswith('TENOFOVIR DISOPROXIL FUMARATE') or x.startswith('EMTRIVA') or x.startswith('EMTRICITABINE') or x.startswith('ATRIPLA') or x.startswith('EFAVIRENZ\EMTRICITABINE\TENOFOVIR DISOPROXIL FUMARATE'):
+            class_df.loc[y, 'indication'] = 'hypertension, BPH'       
+        
+        elif x.startswith('TRUVADA') or x.startswith('DESCOVY') or x.endswith('*TENOFOVIR ALAFENAMIDE FUMARATE') or x.endswith('*DISOPROXIL FUMARATE') or x.startswith('VIREAD') or x.startswith('EMTRIVA') or x.startswith('EMTRICITABINE') or x.startswith('ATRIPLA'):
             class_df.loc[y, 'class_id'] = 51 
             class_df.loc[y, 'class'] = 'reverse transcriptase inhibitor'
-            class_df.loc[y, 'indication'] = 'antiviral'
-        elif x.startswith('ACETAMINOPHEN') or x.startswith('TYLENOL'):
-            class_df.loc[y, 'class_id'] = 52
-            class_df.loc[y, 'class'] = 'analgesic'
-            class_df.loc[y, 'indication'] = 'fever reducer'
-        elif x.startswith('OTEZLA') or x.startswith('APREMILAST') or x.startswith('SILDENAFIL CITRATE'):
-            class_df.loc[y, 'class_id'] = 54
-            class_df.loc[y, 'class'] = 'phosphodiesterase inhibitor'
-            class_df.loc[y, 'indication'] = 'autoimmune diseases, erectile dysfunction'
-        elif x.startswith('ASPIRIN') or x.startswith('IBUPROFEN') or x.startswith('MELOXICAM') or x.startswith('MOBIC') or x.endswith('FENAC') or x.endswith('PROFEN') or x.startswith('CELECOXIB') or x.startswith('CELEBREX') or x.startswith('NAPROXEN') or x.startswith('NAPROSYN'):
-            class_df.loc[y, 'class_id'] = 55
-            class_df.loc[y, 'class'] = 'nonsteroidal anti-inflammatory drug'
-            class_df.loc[y, 'indication'] = 'fever reducer, inflammation, pain management'
-        elif x.startswith('TECFIDERA') or x.startswith('DIMETHYL FUMARATE'):
+            class_df.loc[y, 'indication'] = 'antiviral'   
+        else:
+            pass
+        
+
+    
+    class_df.class_id = class_df.class_id.astype(str)
+            
+    df_2 = class_df[class_df.class_id != 'nan']
+    df_3 = class_df[class_df.class_id == 'nan']
+    final_df = pd.concat([lead_df, df_2])
+    
+    idx = df_3.index
+    drugs = df_3.prod_ai
+     
+    end_time = time.time()
+    total_min = (end_time - start_time) / 60
+    total_hr = total_min / 60
+    print(total_min)
+    print('second stage complete. Initiating stage three...')
+    
+    return map_3(df_3,drugs,idx,final_df,array_split)
+
+def map_3(class_df,drugs,idx,final_df,array_split):
+    start_time = time.time()
+    
+    for x,y in zip(drugs,idx):
+        
+        if x.startswith('TECFIDERA') or x.startswith('DIMETHYL FUMARATE'):
             class_df.loc[y, 'class_id'] = 56
             class_df.loc[y, 'class'] = 'dimethyl fumarate, fumaric acid ester'
-            class_df.loc[y, 'indication'] = 'multiple sclerosis'
-        elif x.startswith('METFORMIN'):
-            class_df.loc[y, 'class_id'] = 62
-            class_df.loc[y, 'class'] = 'biguanides'
-            class_df.loc[y, 'indication'] = 'diabetic management'
+            class_df.loc[y, 'indication'] = 'multiple sclerosis'  
         elif x.startswith('NEULASTA'):
             class_df.loc[y, 'class_id'] = 63
             class_df.loc[y, 'class'] = 'granulocyte colony stimulating factor'
@@ -280,58 +385,15 @@ def map_1(class_df,prod_ai,indices):
         elif x.startswith('OXYCONTIN') or x.startswith('OXYCODONE') or x.startswith('CODEINE') or x.endswith('CODONE') or x.endswith('PHINE') or x.endswith('TANYL') or x.endswith('MORPHONE') or x.startswith('TRAMADOL') or x.startswith('ROXANOL') or x.startswith('MORPHINE SULFATE') or x.startswith('SUBLIMAZE') or x.startswith('FENTANYL'):
             class_df.loc[y, 'class_id'] = 67
             class_df.loc[y, 'class'] = 'opioid agonist'
-            class_df.loc[y, 'indication'] = 'pain management'
-        elif x.startswith('ELIQUIS') or x.startswith('APIXABAN'):
-            class_df.loc[y, 'class_id'] = 68
-            class_df.loc[y, 'class'] = 'factor Xa inhibitor anticoagulant'
-            class_df.loc[y, 'indication'] = 'nonvalvular atrial fibrilation'
-        elif x.startswith('SYNTHROID') or x.startswith('LEVOTHYROXINE') or x.startswith('TESTOSTERONE') or x.startswith('ESTROGENS, CONJUGATED') or x.startswith('ETONOGESTREL') or x.startswith('NEXPLANON') or x.startswith('IMPLANON') or x.startswith('MELATONIN') or x.startswith('ESTRADIOL') or x.startswith('ESTRACE') or x.endswith('TROPIN') or x.startswith('LEVONORGESTREL') or x.startswith('TESTOSTERONE CYPIONATE') or x.startswith('DEPO-TESTOSTERONE'):
-            class_df.loc[y, 'class_id'] = 70
-            class_df.loc[y, 'class'] = 'hormone'
-            class_df.loc[y, 'indication'] = 'hormone deficiency'
-            
-    class_df.class_id = class_df.class_id.astype(str)
-    lead_df = class_df[class_df.class_id != 'nan']
-    df_2 = class_df[class_df.class_id == 'nan']
-    
-    idx = df_2.index
-    drugs = df_2.drugname
-
-    print('first stage complete, check "lead_df" for current output. Initiating stage two...')
-
-    return map_2(df_2,drugs,idx,lead_df)
-
-def map_2(class_df,drugs,idx,lead_df):
-    
-    for x,y in zip(drugs,idx): 
-        if x.startswith('VITAMIN') or x.startswith('BIOTIN') or x.startswith('UBIDECARENONE') or x.startswith('MINERALS\VITAMINS') or x.startswith('FERROUS SULFATE') or x.startswith('FISH OIL') or x.startswith('IRON') or x.startswith('ERGOCALCIFEROL') or x.startswith('CHOLECALCIFEROL') or x.startswith('CYANOCOBALAMIN') or x.startswith('ASCORBIC ACID') or x.startswith('FOLIC'):
-            class_df.loc[y, 'class_id'] = 74
-            class_df.loc[y, 'class'] = 'vitamin, mineral, antioxidant'
-            class_df.loc[y, 'indication'] = 'dietary supplement'
+            class_df.loc[y, 'indication'] = 'pain management'  
         elif x.startswith('TRULICITY'):
             class_df.loc[y, 'class_id'] = 76
             class_df.loc[y, 'class'] = 'glp-1 receptor agonist'
-            class_df.loc[y, 'indication'] = 'glycemic management'
-        elif x.startswith('PROAIR HFA') or x.startswith('ALBUTEROL SULFATE'):
-            class_df.loc[y, 'class_id'] = 79
-            class_df.loc[y, 'class'] = 'beta-2 adrenergic agonist'
-            class_df.loc[y, 'indication'] = 'asthma'
-        elif x.startswith('PROGRAF') or x.startswith('TACROLIMUS'):
-            class_df.loc[y, 'class_id'] = 81
-            class_df.loc[y, 'class'] = 'immunosuppressant'
-            class_df.loc[y, 'indication'] = 'prophylaxis of organ rejection'
-        elif x.startswith('LANTUS') or x.startswith('INSULIN GLARGINE') or x.startswith('INSULIN NOS') or x.startswith('INSULIN ASPART') or x.startswith('NOVOLOG')or x.startswith('INSULIN HUMAN') or x.startswith('MYXREDLIN') or x.startswith('HUMALOG') or x.startswith('INSULIN LISPRO'): 
-            class_df.loc[y, 'class_id'] = 82
-            class_df.loc[y, 'class'] = 'human insulin analog'
-            class_df.loc[y, 'indication'] = 'glycemic management, T1 diabetes, T2 diabetes'
+            class_df.loc[y, 'indication'] = 'glycemic management' 
         elif x.startswith('REMODULIN') or x.startswith('TREPROSTINIL'):
             class_df.loc[y, 'class_id'] = 83
             class_df.loc[y, 'class'] = 'prostacyclin vasodialator'
-            class_df.loc[y, 'indication'] = 'pulmonary arterial hypertension, transition from Flolan'
-        elif x.startswith('SINEMET') or x.startswith('CARBIDOPA\LEVODOPA') or x.startswith('LEVODOPA'):
-            class_df.loc[y, 'class_id'] = 84
-            class_df.loc[y, 'class'] = 'decarboxylase inhibitor, CNS agent'
-            class_df.loc[y, 'indication'] = 'parkinsons disease'
+            class_df.loc[y, 'indication'] = 'pulmonary arterial hypertension, transition from Flolan' 
         elif x.startswith('DILANTIN') or x.startswith('PHENYTOIN') or x.startswith('VALPROIC ACID') or x.startswith('CARBAMAZEPINE') or x.startswith('TEGRETOL') or x.startswith('TOPIRAMATE') or x.startswith('TOPAMAX')or x.startswith('LEVETIRACETAM') or x.startswith('KEPPRA'):
             class_df.loc[y, 'class_id'] = 85
             class_df.loc[y, 'class'] = 'anticonvulsants'
@@ -340,7 +402,30 @@ def map_2(class_df,drugs,idx,lead_df):
             class_df.loc[y, 'class_id'] = 86
             class_df.loc[y, 'class'] = 'antibacterial'
             class_df.loc[y, 'indication'] = 'bacterial infection'
-        elif x.startswith('IMIQUIMOD') or x.startswith('ALDARA'):
+    
+    
+    class_df.class_id = class_df.class_id.astype(str)
+            
+    df_3 = class_df[class_df.class_id != 'nan']
+    df_4 = class_df[class_df.class_id == 'nan']
+    final_df = pd.concat([final_df, df_3])
+    
+    idx = df_4.index
+    drugs = df_4.prod_ai
+     
+    end_time = time.time()
+    total_min = (end_time - start_time) / 60
+    total_hr = total_min / 60
+    print(total_min)
+    print('third stage complete. Initiating stage four...')
+    
+    return map_4(df_4,drugs,idx,final_df, array_split)
+
+def map_4(class_df,drugs,idx,final_df,array_split):
+    start_time = time.time()
+    
+    for x,y in zip(drugs,idx):
+        if x.startswith('IMIQUIMOD') or x.startswith('ALDARA'):
             class_df.loc[y, 'class_id'] = 88
             class_df.loc[y, 'class'] = 'immune response modifier'
             class_df.loc[y, 'indication'] = 'actinic keratosis, genital warts'
@@ -367,15 +452,7 @@ def map_2(class_df,drugs,idx,lead_df):
         elif x.startswith('ZOFRAN') or x.startswith('ONDANSETRON'):
             class_df.loc[y, 'class_id'] = 96
             class_df.loc[y, 'class'] = '5-HT receptor antagonist'
-            class_df.loc[y, 'indication'] = 'nausea prevention'
-        elif x.startswith('CLOZARIL') or x.startswith('CLOZAPINE') or x.startswith('HALOPERIDOL') or x.startswith('PALIPERIDONE PALMITATE') or x.startswith('INVEGA SUSTENNA') or x.startswith('RISPERIDONE') or x.startswith('RISPERDAL') or x.startswith('PIMAVANSERIN TARTRATE') or x.startswith('NUPLAZID') or x.startswith('QUETIAPINE') or x.startswith('OLANZAPINE') or x.startswith('ZYPREXA'):
-            class_df.loc[y, 'class_id'] = 98
-            class_df.loc[y, 'class'] = 'antipsychotic'
-            class_df.loc[y, 'indication'] = 'schizophrenia'
-        elif x.startswith('PACLITAXEL') or x.startswith('TAXOL') or x.startswith('VINCRISTINE SULFATE') or x.startswith('DOCETAXEL') or x.startswith('TAXOTERE'):
-            class_df.loc[y, 'class_id'] = 99
-            class_df.loc[y, 'class'] = 'antimicrotubule agent'
-            class_df.loc[y, 'indication'] = 'cancer treatment'
+            class_df.loc[y, 'indication'] = 'nausea prevention'  
         elif x.startswith('UPTRAVI') or x.startswith('SELEXIPAG'):
             class_df.loc[y, 'class_id'] = 100
             class_df.loc[y, 'class'] = 'prostacyclin receptor agonist'
@@ -468,7 +545,30 @@ def map_2(class_df,drugs,idx,lead_df):
             class_df.loc[y, 'class_id'] = 137
             class_df.loc[y, 'class'] = 'SARS-CoV-2 nucleotide analog RNA polymerase inhibitor'
             class_df.loc[y, 'indication'] = 'antiviral'
-        elif x.startswith('BRIMONIDINE TARTRATE') or x.startswith('ALPHAGAN'):
+    
+    
+    class_df.class_id = class_df.class_id.astype(str)
+            
+    df_4 = class_df[class_df.class_id != 'nan']
+    df_5 = class_df[class_df.class_id == 'nan']
+    final_df = pd.concat([final_df, df_4])
+    
+    idx = df_5.index
+    drugs = df_5.prod_ai
+     
+    end_time = time.time()
+    total_min = (end_time - start_time) / 60
+    total_hr = total_min / 60
+    print(total_min)
+    print('fourth stage complete. Initiating stage five...')
+    
+    return map_5(df_5,drugs,idx,final_df,array_split)
+
+def map_5(class_df,drugs,idx, final_df,array_split):
+    start_time = time.time()
+    
+    for x,y in zip(drugs,idx):
+        if x.startswith('BRIMONIDINE TARTRATE') or x.startswith('ALPHAGAN'):
             class_df.loc[y, 'class_id'] = 138
             class_df.loc[y, 'class'] = 'alpha adrenergic agonist'
             class_df.loc[y, 'indication'] = 'open-angle glaucoma or ocular hypertension'
@@ -524,24 +624,7 @@ def map_2(class_df,drugs,idx,lead_df):
             class_df.loc[y, 'class_id'] = 151
             class_df.loc[y, 'class'] = 'skeletal muscle relaxant'
             class_df.loc[y, 'indication'] = 'muscle spasm'
-    
-    class_df.class_id = class_df.class_id.astype(str)
-            
-    df_2 = class_df[class_df.class_id != 'nan']
-    df_3 = class_df[class_df.class_id == 'nan']
-    final_df = pd.concat([lead_df, df_2])
-    
-    idx = df_3.index
-    drugs = df_3.drugname
-
-    print('second stage complete, check "final_df" and "df_2" for current output. Initiating stage three...')
-
-    return map_3(df_3,drugs,idx, final_df)
-
-def map_3(class_df,drugs,idx, final_df):
-    
-    for x,y in zip(drugs,idx):
-        if x.startswith('CEFTRIAXONE') or x.startswith('ROCEPHIN'):
+        elif x.startswith('CEFTRIAXONE') or x.startswith('ROCEPHIN'):
             class_df.loc[y, 'class_id'] = 201
             class_df.loc[y, 'class'] = 'cephalosporin'
             class_df.loc[y, 'indication'] = 'antibiotic'
@@ -705,17 +788,45 @@ def map_3(class_df,drugs,idx, final_df):
             class_df.loc[y, 'class_id'] = 226
             class_df.loc[y, 'class'] = 'poly (ADP-ribose) polymerase inhibitor'
             class_df.loc[y, 'indication'] = 'cancer treatment'
+        else:
+            pass
     
     class_df.class_id = class_df.class_id.astype(str)
     miss_df = class_df[class_df.class_id == 'nan']
     class_df = class_df[class_df.class_id != 'nan']
     final_df = pd.concat([final_df, class_df])
-
-    print('mapping complete, check "final_df" and "miss_df" for final outputs. Thank you.')
     
-    final_dfs.append(final_df)
-    miss_dfs.append(miss_df)
+    global final_storage_list
+    global final_missing_storage_list
+    
+    final_storage_list.append(final_df)
+    final_missing_storage_list.append(miss_df)
+    
+    if len(final_storage_list) == array_split:
+        final_df = pd.concat(final_storage_list)
+        final_df = final_df.sort_values(by='primaryid').reset_index(drop=True)
+        final_dfs.append(final_df)
+        
+        miss_df = pd.concat(final_missing_storage_list)
+        miss_df = miss_df.sort_values(by='primaryid').reset_index(drop=True)
+        miss_dfs.append(miss_df)
 
+        
+        final_storage_list = []
+        final_missing_storage = []
+        print('final_df concatenated, onto the next...')
+    else:
+        pass
+    
+    
+    end_time = time.time()
+    total_min = (end_time - start_time) / 60
+    total_hr = total_min / 60
+    
+    
+
+    print(total_min)
+    print('mapping complete, check "final_df" and "miss_df" for final outputs. Thank you.')
 
 
 def reacs_map(reactions__file_path):
@@ -734,8 +845,8 @@ def reacs_map(reactions__file_path):
         reactions_by_id_list.append(reactions_by_id) 
         
             
-    reac_df = pd.DataFrame(reactions_by_id.keys(), columns=(['primaryid'])) 
-    reac_df = reac_df.set_index('primaryid')
+    reac_df = pd.DataFrame(reactions_by_id.keys(), columns=(['primaryid']))
+    reac_df = reac_df.sort_values(by='primaryid').set_index('primaryid')
     reac_df['pt'] = 'nan'
     
     for k,v in reactions_by_id.items():
@@ -761,7 +872,7 @@ def outs_map(outcomes_file_path):
         
 
     out_df = pd.DataFrame(outcomes_by_id.keys(), columns=(['primaryid']))
-    out_df = out_df.set_index('primaryid')
+    out_df = out_df.sort_values(by='primaryid').set_index('primaryid')
     out_df['out_code'] = 'nan'
        
     for k,v in outcomes_by_id.items():
@@ -771,49 +882,45 @@ def outs_map(outcomes_file_path):
     print('done')
 
 
-def file_merge(saved_dfs, class_dfs_primaryids, final_reacs, final_outs):
+def file_merge(final_class_df_path, final_reac_path, final_out_path):
     
-    for sd,cd,fr,fo in zip(saved_dfs, class_dfs_primaryids, final_reacs, final_outs):
-        indices = sd.orig_idx
-        new_cd = cd[0].loc[indices]
-        new = sd.join(new_cd.set_index(sd.index),rsuffix='_orig')
-        new = new.set_index('primaryid')
-        new['pt'] = 'nan'
-        new['out_code'] = 'nan'
-        i = 0
-        for x in fr.index:
-            for a in counter_list:
-                if a > 0:
-                    i = counter_list[-1]
-            x = int(x)
-            for z in new.index[i:-1]:
-                
-                if x == new.index[i]:
-                    new.loc[z,'pt'] = fr.loc[str(x),'pt']
-                    i += 1
-                else:
-                    counter_list.append(i)
-                    break
-
-        print('finished with reactions')
+    if isinstance(final_class_df_path, str):
+        sd = pd.read_csv(final_class_df_path)  
+    if isinstance(final_reac_path, str):
+        fr = pd.read_csv(final_reac_path)
+    if isinstance(final_out_path, str):
+        fo = pd.read_csv(final_out_path)
+    else:
+        sd = final_class_df_path
+        fr = final_reac_path
+        fo = final_out_path
+    
+    sd = sd.set_index('primaryid')
+    fr = fr.set_index('primaryid')
+    fo = fo.set_index('primaryid')
+    sd['pt'] = 'nan'
+    sd['out_code'] = 'nan'
+    
+    for x in fr.index:
+        x = int(x)
         
-        i = 0
-        for y in fo.index:
-            
-            for a in counter_list_2:
-                if a > 0:
-                    i = counter_list_2[-1]
-            y = int(y)
-            for z in new.index[i:-1]:
-                
-                if y == new.index[i]:
-                    new.loc[z,'out_code'] = fo.loc[str(y),'out_code']
-                    i += 1
-                else:
-                    counter_list_2.append(i)
-                    break
-        print('finished with outcomes')
-        new = new[['drugname','drugname_orig', 'class', 'class_id', 'indication', 'pt', 'out_code']].rename(columns={'drugname': 'prod_ai', 'drugname_orig': 'drugname'}).reset_index()
-        print('completed')         
-        custom_dfs.append(new)
+        for z in sd.index:
+            if x == z:
+                sd.loc[z,'pt'] = fr.loc[x,'pt'] 
+            else:
+                pass
+    print('finished with reactions')
+
+    for y in fo.index:    
+        y = int(y)
+        
+        for z in sd.index:
+            if y == z:
+                sd.loc[z,'out_code'] = fo.loc[y,'out_code']
+            else:
+                pass    
+    print('finished with outcomes')
+    sd = sd[['primaryid', 'drugname', 'class', 'class_id', 'indication', 'pt', 'out_code']].reset_index()
+    print('completed')         
+    custom_dfs.append(sd)
 
