@@ -1,5 +1,7 @@
 import pandas as pd
 import csv
+import time
+import itertools
 
 class_dfs = []
 missing_dfs = []
@@ -813,7 +815,7 @@ def map_5(class_df,drugs,idx, final_df,array_split):
 
         
         final_storage_list = []
-        final_missing_storage = []
+        final_missing_storage_list = []
         print('final_df concatenated, onto the next...')
     else:
         pass
