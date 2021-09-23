@@ -1,7 +1,8 @@
 import pandas as pd
 import csv
-import time
 import itertools
+import psycopg2
+import glob
 
 class_dfs = []
 missing_dfs = []
@@ -71,7 +72,6 @@ def sorter(drug_file_path,top_indices=None):
     print('Check "class_dfs", "missing_dfs", "positives" and "indices" for output')
 
 def map_1(class_df, array_split):
-    start_time = time.time()
     
     for x,y in zip(class_df.prod_ai,class_df.index):
         if x.endswith('COSMETICS'):
@@ -82,7 +82,6 @@ def map_1(class_df, array_split):
             class_df.loc[y, 'class_id'] = 301
             class_df.loc[y, 'class'] = 'monoclonal_antibody'
             class_df.loc[y, 'indication'] = 'autoimmune diseases'
-        
         elif x.startswith('ADAPALENE'):
             class_df.loc[y, 'class_id'] = 302
             class_df.loc[y, 'class'] = 'retinoid'
@@ -205,8 +204,6 @@ def map_1(class_df, array_split):
             class_df.loc[y, 'indication'] = 'schizophrenia'         
         else:
             pass
-        
-
             
     class_df.class_id = class_df.class_id.astype(str)
     lead_df = class_df[class_df.class_id != 'nan']
@@ -215,19 +212,13 @@ def map_1(class_df, array_split):
     idx = df_2.index
     drugs = df_2.prod_ai
 
-    end_time = time.time()
-    total_min = (end_time - start_time) / 60
-    total_hr = total_min / 60
-    print(total_min)
     print('first stage complete, check "lead_df" for current output. Initiating stage two...')
    
     return map_2(df_2,drugs,idx,lead_df,array_split)  
 
 def map_2(class_df,drugs,idx,lead_df,array_split):
-    start_time = time.time()
     
-    for x,y in zip(drugs,idx):
-        
+    for x,y in zip(drugs,idx):     
         if x.endswith('AFIL'): 
             class_df.loc[y, 'class_id'] = 6
             class_df.loc[y, 'class'] = 'phosphodiesterase inhibitor'
@@ -351,9 +342,7 @@ def map_2(class_df,drugs,idx,lead_df,array_split):
             class_df.loc[y, 'indication'] = 'antiviral'   
         else:
             pass
-        
 
-    
     class_df.class_id = class_df.class_id.astype(str)
             
     df_2 = class_df[class_df.class_id != 'nan']
@@ -363,19 +352,13 @@ def map_2(class_df,drugs,idx,lead_df,array_split):
     idx = df_3.index
     drugs = df_3.prod_ai
      
-    end_time = time.time()
-    total_min = (end_time - start_time) / 60
-    total_hr = total_min / 60
-    print(total_min)
     print('second stage complete. Initiating stage three...')
     
     return map_3(df_3,drugs,idx,final_df,array_split)
 
 def map_3(class_df,drugs,idx,final_df,array_split):
-    start_time = time.time()
     
-    for x,y in zip(drugs,idx):
-        
+    for x,y in zip(drugs,idx): 
         if x.startswith('TECFIDERA') or x.startswith('DIMETHYL FUMARATE'):
             class_df.loc[y, 'class_id'] = 56
             class_df.loc[y, 'class'] = 'dimethyl fumarate, fumaric acid ester'
@@ -405,7 +388,6 @@ def map_3(class_df,drugs,idx,final_df,array_split):
             class_df.loc[y, 'class'] = 'antibacterial'
             class_df.loc[y, 'indication'] = 'bacterial infection'
     
-    
     class_df.class_id = class_df.class_id.astype(str)
             
     df_3 = class_df[class_df.class_id != 'nan']
@@ -415,16 +397,11 @@ def map_3(class_df,drugs,idx,final_df,array_split):
     idx = df_4.index
     drugs = df_4.prod_ai
      
-    end_time = time.time()
-    total_min = (end_time - start_time) / 60
-    total_hr = total_min / 60
-    print(total_min)
     print('third stage complete. Initiating stage four...')
     
     return map_4(df_4,drugs,idx,final_df, array_split)
 
 def map_4(class_df,drugs,idx,final_df,array_split):
-    start_time = time.time()
     
     for x,y in zip(drugs,idx):
         if x.startswith('IMIQUIMOD') or x.startswith('ALDARA'):
@@ -548,7 +525,6 @@ def map_4(class_df,drugs,idx,final_df,array_split):
             class_df.loc[y, 'class'] = 'SARS-CoV-2 nucleotide analog RNA polymerase inhibitor'
             class_df.loc[y, 'indication'] = 'antiviral'
     
-    
     class_df.class_id = class_df.class_id.astype(str)
             
     df_4 = class_df[class_df.class_id != 'nan']
@@ -558,16 +534,11 @@ def map_4(class_df,drugs,idx,final_df,array_split):
     idx = df_5.index
     drugs = df_5.prod_ai
      
-    end_time = time.time()
-    total_min = (end_time - start_time) / 60
-    total_hr = total_min / 60
-    print(total_min)
     print('fourth stage complete. Initiating stage five...')
     
     return map_5(df_5,drugs,idx,final_df,array_split)
 
 def map_5(class_df,drugs,idx, final_df,array_split):
-    start_time = time.time()
     
     for x,y in zip(drugs,idx):
         if x.startswith('BRIMONIDINE TARTRATE') or x.startswith('ALPHAGAN'):
@@ -819,17 +790,8 @@ def map_5(class_df,drugs,idx, final_df,array_split):
         print('final_df concatenated, onto the next...')
     else:
         pass
-    
-    
-    end_time = time.time()
-    total_min = (end_time - start_time) / 60
-    total_hr = total_min / 60
-    
-    
 
-    print(total_min)
     print('mapping complete, check "final_df" and "miss_df" for final outputs. Thank you.')
-
 
 def reacs_map(reactions__file_path):
     
@@ -857,8 +819,6 @@ def reacs_map(reactions__file_path):
     
     print('completed')
     
-
-
 def outs_map(outcomes_file_path):
     
     outcomes_by_id = {}
@@ -883,46 +843,16 @@ def outs_map(outcomes_file_path):
     
     print('done')
 
+def db_push(host,dbname,user,password,filepath,db_table,columns, sep):
+    conn = psycopg2.connect(host=host, dbname=dbname, user=user, password=password)
+    cur = conn.cursor()
 
-def file_merge(final_class_df_path, final_reac_path, final_out_path):
-    
-    if isinstance(final_class_df_path, str):
-        sd = pd.read_csv(final_class_df_path)  
-    if isinstance(final_reac_path, str):
-        fr = pd.read_csv(final_reac_path)
-    if isinstance(final_out_path, str):
-        fo = pd.read_csv(final_out_path)
-    else:
-        sd = final_class_df_path
-        fr = final_reac_path
-        fo = final_out_path
-    
-    sd = sd.set_index('primaryid')
-    fr = fr.set_index('primaryid')
-    fo = fo.set_index('primaryid')
-    sd['pt'] = 'nan'
-    sd['out_code'] = 'nan'
-    
-    for x in fr.index:
-        x = int(x)
-        
-        for z in sd.index:
-            if x == z:
-                sd.loc[z,'pt'] = fr.loc[x,'pt'] 
-            else:
-                pass
-    print('finished with reactions')
+    for path in glob.iglob(filepath):
 
-    for y in fo.index:    
-        y = int(y)
-        
-        for z in sd.index:
-            if y == z:
-                sd.loc[z,'out_code'] = fo.loc[y,'out_code']
-            else:
-                pass    
-    print('finished with outcomes')
-    sd = sd[['primaryid', 'drugname', 'class', 'class_id', 'indication', 'pt', 'out_code']].reset_index()
-    print('completed')         
-    custom_dfs.append(sd)
+        with open(path, 'r') as f:
+            next(f)
+            cur.copy_from(f, db_table, columns=columns,sep=sep)
+
+    conn.commit()
+    conn.close()
 
