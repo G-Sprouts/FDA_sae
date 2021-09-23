@@ -18,12 +18,12 @@ pip install fdata
 ```
 import fdata as fd
 
-drug_file = pd.read_csv(‘DRUG20Q1.txt’,  delimiter=‘$’)
-fd.sorter(drug_file) 
+for drug_file in glob.iglob('file(s)'):
+	fd.sorter(drug_file)
 
 	…
 
-	“Check ‘class_dfs’, ‘missing_dfs’, ‘new_files’, ‘positives’, and ‘inds’ for output”
+	“Check ‘class_dfs’, ‘missing_dfs’, ‘positives’, and ‘indices’ for output”
 
 fd.class_dfs
     (output)
