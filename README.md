@@ -1,9 +1,12 @@
 # fdata
 
-This tool is meant for the cleaning and creation of custom tables using FDA Adverse Event Reporting System (FAERS) data.
+This tool is meant for the cleaning, creation and storage of custom tables using FDA Adverse Event Reporting System (FAERS) data.
 
-Download whichever [quarterly files](https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html) (ASCII format) you wish to analyze, and utilize these functions to expedite cleaning and organization for your project!
+Download whichever [quarterly files](https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html) (ASCII format) you wish to analyze, and utilize these functions to expedite cleaning, organization and database management for your project!
 
+## **UPDATES**
+
+Database access via psycopg2 and PostgreSQL (last updated 9/23/21)
 
 ## **Installation**
 
