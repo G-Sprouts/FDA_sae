@@ -1,3 +1,6 @@
+### Depreciating this file, dropping pandas as a dependency. see newfdata.py which will
+### change name soon, thank you!
+
 import pandas as pd
 import csv
 import itertools
@@ -793,10 +796,10 @@ def map_5(class_df,drugs,idx, final_df,array_split):
 
     print('mapping complete, check "final_df" and "miss_df" for final outputs. Thank you.')
 
-def reacs_map(reactions__file_path):
+def reacs_map(reactions_file_path):
     
     reactions_by_id = {}
-    with open(reactions__file_path) as csvfile:
+    with open(reactions_file_path) as csvfile:
         reacreader = csv.reader(csvfile, delimiter='$')
         next(reacreader) #skip headers
          
