@@ -30,8 +30,8 @@ for drug_file in glob.iglob('file(s)'):
 
 fd.shortened_file
     (output)
+    
 ```
-
 See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/docs.ipynb) for further explanation
 
 ## Dataset creation
@@ -42,3 +42,5 @@ Easily create your own dataset using FAERS data for machine learning application
 
 
 See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/docs.ipynb) for further explanation
+
+For help installing and using of psycopg2, see their [documentation](https://www.psycopg.org/docs/install.html)
