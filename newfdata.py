@@ -2,18 +2,29 @@ import csv
 import glob
 import psycopg2
 
-shortened_file = []
-none_list = []
-notmapped = []
-reactions_by_id = {}
-reactions_by_id_list = []
-outcomes_by_id = {}
-outcomes_by_id_list = []
-
 # read original csv, manipuulate values, append values to list, write new csv file,
 # push to postgresql db
 
-def sorter(file_path):
+def hasprodai(file_path):
+    shortened_file = []
+    with open(file_path, 'r') as f:
+        reader = csv.reader(f, delimiter='$')
+        next(reader)
+        i = 0
+        for row in reader:
+            i += 1
+            row[5] = row[5].replace('.', '')
+            row[5] = row[5].replace('/', ' ')
+            row[5] = row[5].replace("\\", " ")
+            
+            if row[5] == 'NA' or row[5] == 'N/A' or row[5] == '' or len(row[5]) == 0:
+                pass  
+            else:
+                shortened_file.append([row[0],row[5]])
+    return shortened_file
+
+def noprodai(file_path):
+    none_list = []
     with open(file_path, 'r') as f:
         reader = csv.reader(f, delimiter='$')
         next(reader)
@@ -26,18 +37,16 @@ def sorter(file_path):
             
             if row[5] == 'NA' or row[5] == 'N/A' or row[5] == '' or len(row[5]) == 0:
                 none_list.append([row[0],row[5]])
-                
             else:
-                shortened_file.append([row[0],row[5]])
-        
-        print('done')
+                pass
+    return none_list
 
 def mapper(newcsv, shortened_file):
+    notmapped = []
     with open(newcsv, 'w', newline='') as out:
         writer = csv.writer(out, delimiter='$')
         writer.writerow(['primaryid', 'prodai', 'classid', 'classname', 'indication'])
         for ls in shortened_file:
-    
             x = ls[0]
             y = ls[1]
             if y.endswith('HYDROCHLORIDE') or y.endswith('CHLORIDE') or y.endswith('OXIDE'):
@@ -345,28 +354,27 @@ def mapper(newcsv, shortened_file):
                 writer.writerow([x,y,150,'proton-pump inhibitor', 'GERD'])
             else:
                 notmapped.append(y)
+    return notmapped
 
 def clean_reactions(reactions_filepath, newreactions_filepath):
+    reactions_by_id = {}
+    reactions_by_id_list = []
     with open(reactions_filepath, 'r') as csvfile, open(newreactions_filepath, 'w', newline='') as outcsvfile:
         reacreader = csv.reader(csvfile, delimiter='$')
-        next(reacreader) #skip headers
-
+        next(reacreader) 
         for row in reacreader:
-
             ptlist = reactions_by_id.get(row[0], [])
             ptlist.append(row[2])
             reactions_by_id[row[0]] = ptlist
-
         reactions_by_id_list.append(reactions_by_id)
-        
         writer = csv.writer(outcsvfile, delimiter='$')
         for k,v in reactions_by_id_list[0].items():
             
             writer.writerow([k,v])
-            
-    print('ok')
 
 def clean_outcomes(outcomes_filepath, newoutcomes_filepath):
+    outcomes_by_id = {}
+    outcomes_by_id_list = []
     with open(outcomes_filepath, 'r') as csvfile, open(newoutcomes_filepath, 'w', newline='') as outcsvfile:
         outcreader = csv.reader(csvfile, delimiter='$')
         next(outcreader) #skip headers
@@ -381,7 +389,6 @@ def clean_outcomes(outcomes_filepath, newoutcomes_filepath):
         for k,v in outcomes_by_id_list[0].items():
             
             writer.writerow([k,v])
-    print('ok')
 
 def db_push(host,dbname,user,password,filepath,db_table,columns, sep):
     conn = psycopg2.connect(host=host, dbname=dbname, user=user, password=password)
