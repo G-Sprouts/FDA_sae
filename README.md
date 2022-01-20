@@ -14,7 +14,7 @@ Run the following to install:
 ```
 pip install fdata
 ```
-**Note**: If there are empty lists initialized before the definition, the final output of the function will be attached to these built-in lists. See example below.
+**Note**: If there are empty lists initialized before defining the function, the final output of the function will be attached to these built-in lists. See example below.
 
 
 ## **Usage**
@@ -26,12 +26,12 @@ for drug_file in glob.iglob('file(s)'):
 
 	…
 
-	“Check ‘class_dfs’, ‘missing_dfs’, ‘positives’, and ‘indices’ for output”
+	“Check shortened_file and none_list for sorted files”
 
-fd.class_dfs
+fd.shortened_file
     (output)
+    
 ```
-
 See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/docs.ipynb) for further explanation
 
 ## Dataset creation
@@ -42,3 +42,5 @@ Easily create your own dataset using FAERS data for machine learning application
 
 
 See function [documentation](https://github.com/G-Sprouts/FDA_sae/blob/sprout/docs.ipynb) for further explanation
+
+For help installing and using of psycopg2, see their [documentation](https://www.psycopg.org/docs/install.html)
